@@ -22,9 +22,29 @@ const filterEmpty = (obj) => {
   }
   return tmp
 };
+/**
+ * 转换状态到颜色
+ */
+const parseStatus = (str) => {
+  switch (str) {
+    case '通过':
+      str = 'green'
+      break;
+    case '未通过':
+      str = 'gray'
+      break;
+    case '驳回':
+      str = 'red'
+      break;
+    default:
+      str = 'gray'
+      break;
+  }
+  return str;
+}
 
 router
-// 无意义
+  // 无意义
   .get("/", (ctx, next) => {
     ctx.body = "KOA running!";
   })
@@ -49,11 +69,11 @@ router
     })
   })
   // 新闻内容 前端传入 newsid
-  .get('/newsContent',async (ctx,  next) => {
+  .get('/newsContent', async (ctx, next) => {
     const items = [];
-    await Superagent.get(BASE_URL+"/chronicle/newsDetail").query({
+    await Superagent.get(BASE_URL + "/chronicle/newsDetail").query({
       newsid: ctx.query.newsid,
-    }).then((res) => { 
+    }).then((res) => {
       const $ = Cheerio.load(res.text);
       $('td.font_b1 p').each(function (idx, ele) {
         let $ele = $(ele)
@@ -74,7 +94,7 @@ router
         }
       })
       ctx.body = items;
-     })
+    })
   })
   // 活动列表 前端传入 page
   .get("/prelist", async (ctx, next) => {
@@ -105,6 +125,30 @@ router
       .query(param).then((res) => {
         ctx.body = res.text
       })
+  })
+  // 社团状态 前端传入 clubname status
+  .post('/searchStatue', async (ctx, next) => {
+    const param = filterEmpty(ctx.request.body);
+    const items = [];
+    await Superagent.post(BASE_URL + "/clubmodify/_OrdinaryClubList").query(param).then((res) => {
+      let $ = Cheerio.load(res.text);
+      $('a[style="text-decoration:underline"]').each(function (idx, ele) {
+        let _el = $(ele);
+        let $el = _el.parent().parent().text().replace(/\s+/g, ',').split(',');
+        let rever = _el.parent().parent().children();
+        items.push({
+          name: $el[1],
+          type: 'ordinary',
+          link: _el.attr('href').replace(/\S+clubid=/, ''),
+          // promoter: $el[2],
+          // teacher: $el[3],
+          // time: $el[4],
+          colColor: rever.eq(-2).text().replace(/\s+/g, ''),//parseStatus(),
+          sauColor: rever.eq(-1).text().replace(/\s+/g, '')//parseStatus()
+        })
+      })
+    })
+    ctx.body = items;
   })
   // 反馈至文件 前端传入 data
   .post("/feedback", async (ctx, next) => {

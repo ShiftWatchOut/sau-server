@@ -14,7 +14,7 @@ POST {{localhost}}feedback
 ###
 # 搜索
 POST {{localhost}}search
-{{json}}
+Content-Type: application/json;charset=UTF-8
 
 {
     "ci": "",
@@ -36,9 +36,21 @@ GET {{localhost}}newsList
 GET {{localhost}}newsContent?newsid=6329
 
 ###
+# 竟会是无效请求
 POST {{sau}}/Club/LClub
 Content-Type: application/x-www-form-urlencoded; charset=UTF-8
 
 {
     "pi": "9"
+}
+
+###
+# 申请状态
+POST {{localhost}}searchStatue
+{{json}}
+
+{
+    "clubname": "",
+    "status": "",
+    "pageid": 1
 }
