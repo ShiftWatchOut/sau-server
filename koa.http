@@ -2,41 +2,36 @@
 @sau=http://sau.scu.edu.cn/
 @json=Content-Type: application/json
 
-###
-# 反馈
+### 反馈
 POST {{localhost}}feedback
 {{json}}
 
 {
-    "data": "hello param"
+    "data": "WTFFFFFFFFFFFFFFFFFFF"
 }
 
-###
-# 搜索
+### 搜索
 POST {{localhost}}search
 Content-Type: application/json;charset=UTF-8
 
 {
     "ci": "",
     "cn": "Java",
-    "pi": "1"
+    "pi": ""
 }
 
-###
-# 新闻列表
-GET {{localhost}}newsList
+### 新闻列表
+GET {{localhost}}newsList?page=3
 {{json}}
 
-{
-    "page": "1"
-}
+### 活动列表
+GET {{localhost}}prelist?page=1
+{{json}}
 
-###
-# 新闻内容
-GET {{localhost}}newsContent?newsid=6329
+### 新闻内容
+GET {{localhost}}newsContent?newsid=6315
 
-###
-# 竟会是无效请求
+### 竟会是无效请求 只能得到第一页
 POST {{sau}}/Club/LClub
 Content-Type: application/x-www-form-urlencoded; charset=UTF-8
 
@@ -44,8 +39,7 @@ Content-Type: application/x-www-form-urlencoded; charset=UTF-8
     "pi": "9"
 }
 
-###
-# 申请状态
+### 申请状态
 POST {{localhost}}searchStatue
 {{json}}
 
@@ -54,3 +48,6 @@ POST {{localhost}}searchStatue
     "status": "",
     "pageid": 1
 }
+
+### 本地 SAU 文件下载 
+GET {{localhost}}download?filelink=/file/2015-11-07/db387029-c8fd-4985-820a-d1cb271a0d7d.doc

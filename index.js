@@ -3,7 +3,15 @@ import Cheerio from "cheerio";
 import Superagent from "superagent";
 import Router from "koa-router";
 import bodyParser from "koa-bodyparser";
-import { promises as fsPromises } from "fs";
+import Static from "koa-static";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import Send from "koa-send";
+import fs, { promises as fsPromises } from "fs";
+
+// 在 ES Module 下 dirname 变量的引入
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const router = new Router();
 const app = new Koa();
@@ -155,19 +163,59 @@ router
     const data = Buffer.from("\n" + ctx.request.body.data);
     let message = "";
     try {
-      await fsPromises.appendFile("feed.txt", data, "utf-8");
+      await fsPromises.appendFile("./file/feed.txt", data, "utf-8");
       message = "File Write OK";
     } catch (error) {
-      console.log(error);
       message = "Internall server error";
     } finally {
       ctx.body = {
         message,
       };
     }
+  })
+  // 资料文件下载 前端 get 请求 /file/date/file 路径
+  .get('/file/:date/:file', async (ctx, next) => {
+    const date = ctx.params.date;
+    const file = ctx.params.file;
+    const netFile = "/file/" + date + '/' + file;; // 在读取本地文件时要加上 '.' 访问网络文件时要去掉
+    const filePath = '.' + netFile;
+    const dirPath = filePath.slice(0, 18);
+    console.log('filePath: ', filePath);
+    console.log('dirPath: ', dirPath);
+    await fsPromises.access(dirPath, fs.constants.R_OK | fs.constants.W_OK).catch((err) => {
+      if (err.code = 'ENOENT') {
+        console.log('dir made');
+        fsPromises.mkdir(dirPath, { recursive: true });
+      }
+    })
+    await fsPromises.access(filePath, fs.constants.R_OK)
+      .then(async () => {
+        console.log('file exists');
+        // console.log('before send 111');
+        // await Send(ctx, filePath);
+        // console.log('after send 111');
+      })
+      .catch(async (readerr) => {
+        console.log("readerr");
+        await Superagent
+          .get(BASE_URL + "/upload" + netFile)
+          .then(async (sres) => {
+            console.log('try to write');
+            fs.writeFileSync(filePath, sres.body, 'binary');
+            // console.log('before send 222');
+            // await Send(ctx, filePath);
+            // console.log('after send 222');
+          });
+      })
+      .finally(async () => {
+        console.log('before send 333');
+        await Send(ctx, filePath);
+        console.log('after send 333');
+      });
   });
 
 app
+  .use(Static(join(__dirname)))
   .use(bodyParser())
   .use(router.routes())
   .use(router.allowedMethods())
