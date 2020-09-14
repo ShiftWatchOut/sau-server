@@ -52,10 +52,6 @@ const parseStatus = (str) => {
 }
 
 router
-  // 无意义
-  .get("/", (ctx, next) => {
-    ctx.body = "KOA running!";
-  })
   // 新闻列表 前端传入 page
   .get("/newsList", async (ctx, next) => {
     const items = [];
@@ -151,12 +147,59 @@ router
           // promoter: $el[2],
           // teacher: $el[3],
           // time: $el[4],
-          colColor: rever.eq(-2).text().replace(/\s+/g, ''),//parseStatus(),
-          sauColor: rever.eq(-1).text().replace(/\s+/g, '')//parseStatus()
+          colStat: rever.eq(-2).text().replace(/\s+/g, ''),//parseStatus(),
+          sauStat: rever.eq(-1).text().replace(/\s+/g, ''),//parseStatus()
+        })
+      })
+    })
+    await Superagent.post(BASE_URL + '/clubmodify/_studyclublist').query(param).then((sres) => {
+      let $ = Cheerio.load(sres.text);
+      $('a[style="text-decoration:underline"]').each(function (idx, ele) {
+        let _el = $(ele);
+        let $el = _el.parent().parent().text().replace(/\s+/g, ',').split(',');
+        let rever = _el.parent().parent().children();
+        items.push({
+          name: $el[1],
+          type: 'study',
+          link: _el.attr('href').replace(/\S+clubid=/, ''),
+          // promoter: $el[2],
+          // time: $el[3],
+          colStat: rever.eq(-2).text().replace(/\s+/g, ''),//parseStatus(),
+          sauStat: rever.eq(-1).text().replace(/\s+/g, ''),//parseStatus()
         })
       })
     })
     ctx.body = items;
+  })
+  // 社团详情 传入 club_id type(0|1)
+  .get('/clubDetail', async (ctx, next) => {
+    const { clubid, type } = ctx.query;
+    // 一度怀疑这里不必区分类型，只传 clubid 就能查到
+    const diverLinks = [
+      '/clubmodify/studyClubDetail', // 0 是学术
+      '/clubmodify/OrdinaryClubDetail', // 1 是非学术
+    ]
+    const txt = [];
+    await Superagent.get(BASE_URL + diverLinks[type]).query({ clubid }).then((res) => {
+      let $ = Cheerio.load(res.text);
+      let _el = $('table.formtable td');
+      let _el2 = $('table.formtable th');
+      let dLL = _el.children('a').attr('href');
+      //解析方式一致
+      _el.each(function (idx, ele) {
+        txt.push({
+          name: '',
+          content: $(ele).text().replace(/\s+/g, '')
+        })
+      })
+      _el2.each(function (idx, ele) {
+        txt[idx].name = $(ele).text().replace(/\s+/g, '')
+      })
+      ctx.body = {
+        text: txt,
+        link: dLL
+      }
+    })
   })
   // 反馈至文件 前端传入 data
   .post("/feedback", async (ctx, next) => {
