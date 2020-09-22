@@ -10,7 +10,7 @@ Backend for Re-SAU
 yarn add
 ```
 
-#启动项目
+# 启动项目
 ```
 yarn start
 ```
